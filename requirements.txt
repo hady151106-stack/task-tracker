@@ -1,0 +1,10 @@
+# Task Tracker dependencies (Modules 1-2).
+# After installing, verify exact resolved versions with: pip freeze
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+
+# Testing (Module 2)
+pytest>=8
+httpx>=0.27

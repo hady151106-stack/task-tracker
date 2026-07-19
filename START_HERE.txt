@@ -1,0 +1,141 @@
+=========================================
+  MODULE 3 - START HERE
+=========================================
+
+This folder is your COMPLETE project.
+Module 2 backend + Module 3 frontend, already put together.
+You do NOT need to copy any files.
+
+
+-----------------------------------------
+STEP 1 - PUT THIS FOLDER ON YOUR DESKTOP
+-----------------------------------------
+
+This folder must be named exactly:   task-tracker
+And it must sit on your Desktop.
+
+When you are done it should look like:
+
+   C:\Users\User\Desktop\task-tracker\
+        app\
+        frontend\
+        tests\
+        requirements.txt
+
+IMPORTANT: If you already have an old folder called task-tracker
+on your Desktop, rename the OLD one to  task-tracker-old  first.
+
+
+-----------------------------------------
+STEP 2 - INSTALL (only needed once)
+-----------------------------------------
+
+Open Command Prompt. Type these ONE AT A TIME.
+Press Enter after each. Wait for it to finish before the next.
+
+  cd %USERPROFILE%\Desktop\task-tracker
+
+  python -m venv venv
+
+  venv\Scripts\activate
+
+  pip install -r requirements.txt
+
+The last one takes a minute. When it stops, you are done with Step 2.
+
+
+-----------------------------------------
+STEP 3 - START THE BACKEND
+-----------------------------------------
+
+In the SAME Command Prompt window, type:
+
+  uvicorn app.main:app --reload --port 8000
+
+You will see text and it will look "stuck". That is CORRECT.
+It means the server is running.
+
+*** LEAVE THIS WINDOW OPEN. DO NOT CLOSE IT. ***
+
+
+-----------------------------------------
+STEP 4 - START THE FRONTEND
+-----------------------------------------
+
+Open a SECOND Command Prompt window.
+(Press the Windows key, type cmd, press Enter)
+
+Type these one at a time:
+
+  cd %USERPROFILE%\Desktop\task-tracker\frontend
+
+  python -m http.server 5500
+
+Again it will look "stuck". That is CORRECT.
+
+*** LEAVE THIS WINDOW OPEN TOO. ***
+
+You now have TWO black windows open. Both must stay open.
+
+
+-----------------------------------------
+STEP 5 - ADD SOME TASKS
+-----------------------------------------
+
+Open a THIRD Command Prompt window.
+
+Copy and paste these one at a time (press Enter after each):
+
+curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\":\"Fix auth bug\",\"priority\":\"High\"}"
+
+curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\":\"Review budget\",\"description\":\"Finance needs sign-off.\",\"priority\":\"Medium\"}"
+
+curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\":\"Ship homepage redesign\",\"priority\":\"High\"}"
+
+curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\":\"Update readme\",\"priority\":\"Low\"}"
+
+Each one should print a line of text with an id. That means it worked.
+
+
+-----------------------------------------
+STEP 6 - OPEN THE BOARD
+-----------------------------------------
+
+Open Google Chrome and go to:
+
+  http://localhost:5500
+
+You should see the Task Board with 3 columns and 4 cards.
+
+Press F12 to open the developer tools. Keep them open.
+
+*** SEND ME A SCREENSHOT AT THIS POINT ***
+
+
+=========================================
+  IF SOMETHING GOES WRONG
+=========================================
+
+"python is not recognized"
+   -> Python is not installed or not on PATH.
+      Tell me and I will help.
+
+"No module named uvicorn"
+   -> You forgot   venv\Scripts\activate
+      Run it, then try again.
+
+The board is empty / says "Could not load tasks"
+   -> The backend window (Step 3) is not running.
+      Go back to it and restart it.
+
+All cards disappeared after a restart
+   -> Normal. Tasks are stored in memory only.
+      Just run the Step 5 commands again.
+
+
+=========================================
+  OTHER FILES IN THIS FOLDER
+=========================================
+
+BEHAVIOR_CONTRACT.md  - the 8 checks + 5 modal flows (we do this together)
+DEBUGGING_LOG.md      - your written deliverable, already prepared
