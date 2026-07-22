@@ -160,3 +160,36 @@ def test_patch_unsupported_status_archived_returns_422(client):
 
     response = client.patch(f"/tasks/{task['id']}", json={"status": "Archived"})
     assert response.status_code == 422
+
+# ---------- Mid-Course Project, Feature 1: due dates + overdue ----------
+
+def test_create_task_with_valid_due_date_returns_201_and_echoes_date(client):
+    r = client.post("/tasks", json={"title": "Has a deadline", "due_date": "2030-01-15"})
+    assert r.status_code == 201
+    body = r.json()
+    assert body["due_date"] == "2030-01-15"
+    assert body["is_overdue"] is False
+
+
+def test_create_task_with_invalid_due_date_format_returns_422(client):
+    r = client.post("/tasks", json={"title": "Bad date", "due_date": "15-01-2030"})
+    assert r.status_code == 422
+
+
+def test_past_due_date_marks_task_overdue(client):
+    r = client.post("/tasks", json={"title": "Late work", "due_date": "2020-01-01"})
+    assert r.status_code == 201
+    assert r.json()["is_overdue"] is True
+
+
+def test_done_task_with_past_due_date_is_not_overdue(client):
+    create = client.post("/tasks", json={"title": "Finished late", "due_date": "2020-01-01"})
+    assert create.status_code == 201
+    task_id = create.json()["id"]
+    assert create.json()["is_overdue"] is True
+
+    client.patch(f"/tasks/{task_id}", json={"status": "InProgress"})
+    done = client.patch(f"/tasks/{task_id}", json={"status": "Done"})
+    assert done.status_code == 200
+    assert done.json()["status"] == "Done"
+    assert done.json()["is_overdue"] is False
