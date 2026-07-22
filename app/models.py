@@ -5,11 +5,11 @@ models (TaskCreate, TaskUpdate) forbid extra fields and never accept
 server-managed fields (id, created_at, updated_at).
 """
 
-from datetime import datetime
+from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, computed_field, field_validator
 
 
 class TaskStatus(str, Enum):
@@ -42,6 +42,7 @@ class TaskCreate(BaseModel):
     status: TaskStatus = TaskStatus.TODO
     priority: TaskPriority = TaskPriority.MEDIUM
     assignee: Optional[str] = None
+    due_date: Optional[date] = None
 
     @field_validator("title")
     @classmethod
@@ -57,6 +58,7 @@ class TaskUpdate(BaseModel):
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
     assignee: Optional[str] = None
+    due_date: Optional[date] = None
 
     @field_validator("title")
     @classmethod
@@ -75,5 +77,15 @@ class TaskResponse(BaseModel):
     status: TaskStatus
     priority: TaskPriority
     assignee: Optional[str]
+    due_date: Optional[date] = None
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    @property
+    def is_overdue(self) -> bool:
+        return (
+            self.due_date is not None
+            and self.due_date < datetime.now(timezone.utc).date()
+            and self.status is not TaskStatus.DONE
+        )
