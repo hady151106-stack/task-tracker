@@ -242,6 +242,50 @@
       color: #17603c;
     }
 
+    .overdue-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--pill-radius);
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #ffffff;
+      background: rgba(214, 69, 80, 0.16);
+      border: 1px solid rgba(214, 69, 80, 0.24);
+    }
+
+    .card-dates {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .due-date {
+      color: var(--muted);
+      font-size: 0.85rem;
+      border-radius: var(--pill-radius);
+      padding: 4px 10px;
+      background: rgba(237, 242, 247, 0.9);
+      border: 1px solid rgba(217, 226, 236, 0.95);
+    }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .filter-toggle {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--text);
+    }
+
     .edit-button {
       appearance: none;
       border: 1px solid rgba(217, 226, 236, 0.95);
@@ -505,6 +549,12 @@
       </div>
       <button id="new-task-button" type="button" class="primary-button">New Task</button>
     </div>
+    <div class="filter-bar">
+      <label>
+        <input id="filter-overdue" class="filter-toggle" type="checkbox" />
+        Overdue only
+      </label>
+    </div>
   </header>
 
   <main>
@@ -555,6 +605,11 @@
         <input type="text" id="input-assignee" />
       </div>
 
+      <div class="modal-field">
+        <label for="input-due-date">Due date</label>
+        <input type="date" id="input-due-date" />
+      </div>
+
       <div class="modal-actions">
         <button id="modal-cancel" type="button" class="secondary-button">Cancel</button>
         <button id="modal-save" type="button" class="primary-button">Save</button>
@@ -576,6 +631,7 @@
     let tasks = [];
     let boardState = "loading";
     let draggedTaskId = null;
+    let overdueOnly = false;
 
     // ---------- Fetch and render ----------
 
@@ -640,6 +696,7 @@
       const columnHtml = STATUSES.map((status) => {
         const columnTasks = tasks
           .filter((task) => task.status === status)
+          .filter((task) => (overdueOnly ? task.is_overdue === true : true))
           .sort((a, b) => {
             const priorityDiff =
               PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
@@ -655,6 +712,7 @@
               <div>
                 <h3 class="card-title">${escapeHtml(task.title || "Task")}</h3>
                 <p class="card-text">${escapeHtml(task.description || "No description")}</p>
+                ${renderDates(task)}
               </div>
               <div class="card-meta">
                 <span class="priority-pill ${task.priority.toLowerCase()}">${escapeHtml(task.priority)}</span>
@@ -687,6 +745,22 @@
       attachCardDragListeners();
       attachColumnDropListeners();
       attachEditListeners();
+    }
+
+    function renderDates(task) {
+      if (!task.due_date && !task.is_overdue) {
+        return "";
+      }
+
+      const parts = [];
+      if (task.due_date) {
+        parts.push(`<span class="due-date">Due ${escapeHtml(task.due_date)}</span>`);
+      }
+      if (task.is_overdue) {
+        parts.push(`<span class="overdue-pill">Overdue</span>`);
+      }
+
+      return `<div class="card-dates">${parts.join("")}</div>`;
     }
 
     function escapeHtml(value) {
@@ -818,6 +892,7 @@
     const inputStatus = document.getElementById("input-status");
     const inputPriority = document.getElementById("input-priority");
     const inputAssignee = document.getElementById("input-assignee");
+    const inputDueDate = document.getElementById("input-due-date");
 
     function openModal(mode, task = null) {
       clearModalError();
@@ -829,6 +904,7 @@
         inputStatus.value = STATUSES.includes(task.status) ? task.status : "ToDo";
         inputPriority.value = task.priority || "Medium";
         inputAssignee.value = task.assignee || "";
+        inputDueDate.value = task.due_date || "";
         inputTaskId.value = String(task.id);
       } else {
         modalTitle.textContent = "New Task";
@@ -837,6 +913,7 @@
         inputStatus.value = "ToDo";
         inputPriority.value = "Medium";
         inputAssignee.value = "";
+        inputDueDate.value = "";
         inputTaskId.value = "";
       }
 
@@ -885,7 +962,8 @@
         description: inputDescription.value.trim(),
         status: inputStatus.value,
         priority: inputPriority.value,
-        assignee: inputAssignee.value.trim() || null
+        assignee: inputAssignee.value.trim() || null,
+        due_date: inputDueDate.value || null
       };
 
       const isEdit = Boolean(taskId);
@@ -936,6 +1014,10 @@
     document.getElementById("modal-save").onclick = saveTask;
     document.getElementById("modal-cancel").onclick = closeModal;
     document.getElementById("modal-close").onclick = closeModal;
+    document.getElementById("filter-overdue").onchange = function (event) {
+      overdueOnly = event.target.checked;
+      renderBoard();
+    };
 
     modalOverlay.onclick = function (e) {
       if (e.target === modalOverlay) closeModal();
