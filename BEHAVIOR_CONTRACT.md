@@ -14,6 +14,17 @@ Check every one manually in the browser at `http://localhost:5500` with DevTools
 | C7 | Invalid drag / server 422 reverts and shows the server message | Move a card all the way to Done, then drag it back to ToDo. Console logs `drop: PATCH failed with status 422`. The card jumps back to Done and a red banner appears at the top with the message "Invalid status transition from Done to ToDo...". | |
 | C8 | New Task and Edit modal flows work, including title validation and dismissal | Click New Task, leave Title blank, click Save — "Title is required" shows and NO network request is sent. Type a title and Save — the card appears. Click Edit on a card — the form is pre-filled. Test all four dismissal paths: Cancel, the X button, the Escape key, and clicking the dark overlay outside the box. | |
 
+## Mid-Course Project — Feature contract (C9-C14)
+
+| ID | Behavior | How to check manually | Pass/Fail |
+|----|----------|----------------------|-----------|
+| C9 | Due date saves and displays | New Task with a due date. The card shows "Due YYYY-MM-DD". Edit the card and the date field is pre-filled. | |
+| C10 | Past due date shows the Overdue pill | Create a task with due date 2020-01-01. The card shows a red "Overdue" pill next to the due date. | |
+| C11 | Done tasks are never overdue | Take the overdue task and drag it ToDo to InProgress to Done. Once in Done, the Overdue pill disappears while the due date stays visible. | |
+| C12 | Overdue-only filter hides non-overdue tasks and keeps columns visible | Tick "Overdue only". Only overdue cards remain. All three columns stay on screen, showing "Drop tasks here" where empty. Untick and the full board returns. | |
+| C13 | Tags save, display as chips, and clear correctly | New Task with tags "bug, urgent". Two chips appear on the card. Edit the card, clear the tag field, Save. The chips disappear. | |
+| C14 | Tag filter combines with the overdue filter using AND | Create a task with tag "docs" and due date 2020-01-01. Select "docs" in the tag dropdown AND tick "Overdue only". The card still shows. Change the tag dropdown to a different tag and the card disappears. | |
+
 ---
 
 ## Part 3.3 — the five modal flows (hard gate)
