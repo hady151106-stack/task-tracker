@@ -193,3 +193,38 @@ def test_done_task_with_past_due_date_is_not_overdue(client):
     assert done.status_code == 200
     assert done.json()["status"] == "Done"
     assert done.json()["is_overdue"] is False
+
+
+def test_create_task_with_tags_normalizes_and_deduplicates(client):
+    r = client.post(
+        "/tasks",
+        json={"title": "Tagged work", "tags": ["  Alpha  ", "alpha", "Beta", "Gamma"]},
+    )
+    assert r.status_code == 201
+    assert r.json()["tags"] == ["Alpha", "Beta", "Gamma"]
+
+
+def test_create_task_with_blank_tag_returns_422(client):
+    r = client.post("/tasks", json={"title": "Bare tag", "tags": ["ok", "   "]})
+    assert r.status_code == 422
+
+
+def test_create_task_with_six_tags_returns_422(client):
+    r = client.post(
+        "/tasks",
+        json={"title": "Too many", "tags": ["a", "b", "c", "d", "e", "f"]},
+    )
+    assert r.status_code == 422
+
+
+def test_patch_tags_replaces_existing_tags(client):
+    create = client.post("/tasks", json={"title": "Retag me", "tags": ["old"]})
+    assert create.status_code == 201
+    task_id = create.json()["id"]
+
+    r = client.patch(
+        f"/tasks/{task_id}",
+        json={"tags": ["new", "NEW", " fresh "]},
+    )
+    assert r.status_code == 200
+    assert r.json()["tags"] == ["new", "fresh"]

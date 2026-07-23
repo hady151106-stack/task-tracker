@@ -28,9 +28,9 @@ def add_task(payload: TaskCreate) -> TaskResponse:
         priority=payload.priority,
         assignee=payload.assignee,
         due_date=payload.due_date,
+        tags=payload.tags,
         created_at=now,
         updated_at=now,
-        
     )
     _tasks[task_id] = task
     return task

@@ -9,7 +9,7 @@ from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, computed_field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 
 class TaskStatus(str, Enum):
@@ -34,6 +34,27 @@ def _validate_title(value: str) -> str:
     return stripped
 
 
+def _validate_tags(value: list[str]) -> list[str]:
+    """Normalize tags by stripping whitespace, rejecting blanks, and deduplicating."""
+    normalized: list[str] = []
+    seen: set[str] = set()
+
+    for tag in value:
+        stripped = tag.strip()
+        if not stripped:
+            raise ValueError("Tags cannot be blank")
+
+        key = stripped.lower()
+        if key not in seen:
+            seen.add(key)
+            normalized.append(stripped)
+
+    if len(normalized) > 5:
+        raise ValueError("A task cannot have more than 5 tags")
+
+    return normalized
+
+
 class TaskCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -43,11 +64,17 @@ class TaskCreate(BaseModel):
     priority: TaskPriority = TaskPriority.MEDIUM
     assignee: Optional[str] = None
     due_date: Optional[date] = None
+    tags: list[str] = Field(default_factory=list)
 
     @field_validator("title")
     @classmethod
     def check_title(cls, value: str) -> str:
         return _validate_title(value)
+
+    @field_validator("tags")
+    @classmethod
+    def check_tags(cls, value: list[str]) -> list[str]:
+        return _validate_tags(value)
 
 
 class TaskUpdate(BaseModel):
@@ -59,6 +86,7 @@ class TaskUpdate(BaseModel):
     priority: Optional[TaskPriority] = None
     assignee: Optional[str] = None
     due_date: Optional[date] = None
+    tags: Optional[list[str]] = None
 
     @field_validator("title")
     @classmethod
@@ -66,6 +94,13 @@ class TaskUpdate(BaseModel):
         if value is None:
             return value
         return _validate_title(value)
+
+    @field_validator("tags")
+    @classmethod
+    def check_tags(cls, value: Optional[list[str]]) -> Optional[list[str]]:
+        if value is None:
+            return value
+        return _validate_tags(value)
 
 
 class TaskResponse(BaseModel):
@@ -78,6 +113,7 @@ class TaskResponse(BaseModel):
     priority: TaskPriority
     assignee: Optional[str]
     due_date: Optional[date] = None
+    tags: list[str] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
