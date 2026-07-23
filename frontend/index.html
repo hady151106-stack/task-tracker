@@ -286,6 +286,35 @@
       accent-color: var(--text);
     }
 
+    .tag-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: var(--pill-radius);
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(16, 42, 67, 0.08);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .tag-select {
+      min-height: 32px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--pill-radius);
+      background: rgba(255, 255, 255, 0.75);
+      color: var(--text);
+      font: inherit;
+    }
+
     .edit-button {
       appearance: none;
       border: 1px solid rgba(217, 226, 236, 0.95);
@@ -554,6 +583,9 @@
         <input id="filter-overdue" class="filter-toggle" type="checkbox" />
         Overdue only
       </label>
+      <select id="filter-tag" class="tag-select">
+        <option value="">All tags</option>
+      </select>
     </div>
   </header>
 
@@ -610,6 +642,11 @@
         <input type="date" id="input-due-date" />
       </div>
 
+      <div class="modal-field">
+        <label for="input-tags">Tags</label>
+        <input type="text" id="input-tags" placeholder="comma separated" />
+      </div>
+
       <div class="modal-actions">
         <button id="modal-cancel" type="button" class="secondary-button">Cancel</button>
         <button id="modal-save" type="button" class="primary-button">Save</button>
@@ -632,6 +669,7 @@
     let boardState = "loading";
     let draggedTaskId = null;
     let overdueOnly = false;
+    let tagFilter = "";
 
     // ---------- Fetch and render ----------
 
@@ -693,10 +731,13 @@
     }
 
     function renderBoard() {
+      populateTagFilter();
+
       const columnHtml = STATUSES.map((status) => {
         const columnTasks = tasks
           .filter((task) => task.status === status)
           .filter((task) => (overdueOnly ? task.is_overdue === true : true))
+          .filter((task) => (tagFilter ? (task.tags || []).some((t) => String(t).toLowerCase() === tagFilter.toLowerCase()) : true))
           .sort((a, b) => {
             const priorityDiff =
               PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
@@ -713,6 +754,7 @@
                 <h3 class="card-title">${escapeHtml(task.title || "Task")}</h3>
                 <p class="card-text">${escapeHtml(task.description || "No description")}</p>
                 ${renderDates(task)}
+                ${renderTags(task)}
               </div>
               <div class="card-meta">
                 <span class="priority-pill ${task.priority.toLowerCase()}">${escapeHtml(task.priority)}</span>
@@ -761,6 +803,54 @@
       }
 
       return `<div class="card-dates">${parts.join("")}</div>`;
+    }
+
+    function renderTags(task) {
+      const tags = Array.isArray(task.tags) ? task.tags : [];
+      if (!tags.length) {
+        return "";
+      }
+
+      const chips = tags
+        .filter((tag) => String(tag).trim())
+        .map((tag) => `<span class="tag-chip">${escapeHtml(tag)}</span>`)
+        .join("");
+
+      return `<div class="tag-chips">${chips}</div>`;
+    }
+
+    function populateTagFilter() {
+      const select = document.getElementById("filter-tag");
+      if (!select) {
+        return;
+      }
+
+      const currentSelection = select.value || tagFilter || "";
+      const seen = new Set();
+      const tags = [];
+
+      tasks.forEach((task) => {
+        (task.tags || []).forEach((tag) => {
+          const trimmed = String(tag).trim();
+          if (!trimmed) {
+            return;
+          }
+          const key = trimmed.toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
+            tags.push(trimmed);
+          }
+        });
+      });
+
+      tags.sort((a, b) => a.localeCompare(b));
+
+      const options = ["", ...tags];
+      const selectedStillExists = options.some((option) => option && option.toLowerCase() === currentSelection.toLowerCase());
+
+      select.innerHTML = ['<option value="">All tags</option>', ...tags.map((tag) => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`)].join("");
+      select.value = selectedStillExists ? currentSelection : "";
+      tagFilter = select.value;
     }
 
     function escapeHtml(value) {
@@ -893,6 +983,7 @@
     const inputPriority = document.getElementById("input-priority");
     const inputAssignee = document.getElementById("input-assignee");
     const inputDueDate = document.getElementById("input-due-date");
+    const inputTags = document.getElementById("input-tags");
 
     function openModal(mode, task = null) {
       clearModalError();
@@ -905,6 +996,7 @@
         inputPriority.value = task.priority || "Medium";
         inputAssignee.value = task.assignee || "";
         inputDueDate.value = task.due_date || "";
+        inputTags.value = (task.tags || []).join(", ");
         inputTaskId.value = String(task.id);
       } else {
         modalTitle.textContent = "New Task";
@@ -914,6 +1006,7 @@
         inputPriority.value = "Medium";
         inputAssignee.value = "";
         inputDueDate.value = "";
+        inputTags.value = "";
         inputTaskId.value = "";
       }
 
@@ -963,7 +1056,8 @@
         status: inputStatus.value,
         priority: inputPriority.value,
         assignee: inputAssignee.value.trim() || null,
-        due_date: inputDueDate.value || null
+        due_date: inputDueDate.value || null,
+        tags: inputTags.value.split(",").map((tag) => tag.trim()).filter((tag) => tag.length > 0)
       };
 
       const isEdit = Boolean(taskId);
@@ -1016,6 +1110,10 @@
     document.getElementById("modal-close").onclick = closeModal;
     document.getElementById("filter-overdue").onchange = function (event) {
       overdueOnly = event.target.checked;
+      renderBoard();
+    };
+    document.getElementById("filter-tag").onchange = function (event) {
+      tagFilter = event.target.value;
       renderBoard();
     };
 
