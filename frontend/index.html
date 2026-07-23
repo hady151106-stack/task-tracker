@@ -825,7 +825,6 @@
         return;
       }
 
-      const currentSelection = select.value || tagFilter || "";
       const seen = new Set();
       const tags = [];
 
@@ -845,12 +844,13 @@
 
       tags.sort((a, b) => a.localeCompare(b));
 
-      const options = ["", ...tags];
-      const selectedStillExists = options.some((option) => option && option.toLowerCase() === currentSelection.toLowerCase());
+      const validSelections = new Set(tags.map((tag) => tag.toLowerCase()));
+      if (tagFilter && !validSelections.has(tagFilter.toLowerCase())) {
+        tagFilter = "";
+      }
 
       select.innerHTML = ['<option value="">All tags</option>', ...tags.map((tag) => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`)].join("");
-      select.value = selectedStillExists ? currentSelection : "";
-      tagFilter = select.value;
+      select.value = tagFilter;
     }
 
     function escapeHtml(value) {
