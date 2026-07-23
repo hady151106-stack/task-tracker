@@ -77,4 +77,9 @@ Rejected as out of scope, and recorded here so scope creep is visible if it happ
 
 - Recurring or repeating due dates.
 - Due-date reminders or notifications.
-- Tag
+- Tag autocomplete or suggestions while typing.
+- Tag colours or per-tag styling.
+- Renaming or merging a tag across every task that carries it.
+- Sorting or grouping the board by tag rather than by status.
+
+Each of these is a reasonable next step, but none is needed to demonstrate the two features end-to-end, and each would widen the diff beyond what can be verified in the time available.
