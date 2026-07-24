@@ -24,14 +24,16 @@ This baseline is the regression reference. Any later failure among these 20 test
 | After Feature 1 storage fix | 24 passed |
 | After Feature 2 (tags) | 28 passed |
 | After refactor | 28 passed |
+| After overdue query filter added | 29 passed |
 
-**Final suite: 28 passed** — the original 20 plus 8 new tests.
+**Final suite: 29 passed** — the original 20 plus 9 new tests.
 
 New tests, Feature 1:
 - test_create_task_with_valid_due_date_returns_201_and_echoes_date
 - test_create_task_with_invalid_due_date_format_returns_422
 - test_past_due_date_marks_task_overdue
 - test_done_task_with_past_due_date_is_not_overdue
+- test_list_tasks_overdue_filter_returns_only_overdue_tasks
 
 New tests, Feature 2:
 - test_create_task_with_tags_normalizes_and_deduplicates
@@ -134,3 +136,18 @@ Feature 2:
 - After removing the last remaining bug tag while bug was the active filter, the dropdown reset to "All tags" and the board returned to showing everything — the behaviour targeted by the refactor.
 
 Regression spot-check: drag-and-drop, priority sorting, the empty state, and the modal's four dismissal paths were re-checked after every frontend change and continued to work.
+
+
+## 7. Resubmission — backend overdue query filter
+
+Facilitator feedback on the first submission identified that `GET /tasks?overdue=true` was not accepted by the endpoint: the parameter had no effect and a Done task with a past due date still appeared in the results. The brief lists an optional query filter for overdue as backend work, with a test confirming the filter returns only overdue tasks.
+
+**Change.** Added an `overdue: bool = False` query parameter to `list_tasks` in `app/main.py`. When true, the route filters the list returned by `storage.get_all_tasks` down to tasks whose computed `is_overdue` field is true. The default of `False` leaves existing behaviour unchanged, so no previously passing test was affected.
+
+**Test added.** `test_list_tasks_overdue_filter_returns_only_overdue_tasks` creates four tasks — one overdue, one with a future due date, one with no due date, and one with a past due date moved to Done — then asserts that the unfiltered list returns all four while `GET /tasks?overdue=true` returns only the overdue one.
+
+**The test caught the bug before the fix landed.** On the first run it failed with `assert 4 == 1`: all four tasks came back. The cause was that the edit to `app/main.py` had not been saved to disk, so the route was still the original version. Confirmed by searching the file for `overdue` and finding no matches. After saving, the same test passed. The failure was useful — it proved the assertion is specific to the filter rather than passing regardless.
+
+**Result:** 29 passed.
+
+Also corrected in this resubmission: `README.md`, which still contained unmodified Module 1 skeleton text describing folders that were never built and stating that CRUD endpoints would be added in later modules. It now describes the project as it actually stands, including both mid-course features, the full route table, the real directory layout, and run instructions for the backend, the frontend, and the tests.

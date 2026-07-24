@@ -228,3 +228,35 @@ def test_patch_tags_replaces_existing_tags(client):
     )
     assert r.status_code == 200
     assert r.json()["tags"] == ["new", "fresh"]
+
+def test_list_tasks_overdue_filter_returns_only_overdue_tasks(client):
+    # Overdue: past due date, still ToDo
+    overdue = client.post("/tasks", json={"title": "Late work", "due_date": "2020-01-01"})
+    assert overdue.status_code == 201
+    assert overdue.json()["is_overdue"] is True
+
+    # Not overdue: future due date
+    future = client.post("/tasks", json={"title": "Future work", "due_date": "2030-01-15"})
+    assert future.status_code == 201
+
+    # Not overdue: no due date at all
+    client.post("/tasks", json={"title": "No deadline"})
+
+    # Not overdue: past due date but Done
+    done = client.post("/tasks", json={"title": "Finished late", "due_date": "2020-01-01"})
+    done_id = done.json()["id"]
+    client.patch(f"/tasks/{done_id}", json={"status": "InProgress"})
+    client.patch(f"/tasks/{done_id}", json={"status": "Done"})
+
+    # Without the filter, all four tasks come back
+    unfiltered = client.get("/tasks")
+    assert unfiltered.status_code == 200
+    assert len(unfiltered.json()) == 4
+
+    # With the filter, only the overdue one
+    r = client.get("/tasks", params={"overdue": "true"})
+    assert r.status_code == 200
+    bodies = r.json()
+    assert len(bodies) == 1
+    assert bodies[0]["title"] == "Late work"
+    assert bodies[0]["is_overdue"] is True

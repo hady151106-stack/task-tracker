@@ -62,12 +62,15 @@ Alternatives considered:
 
 ## Decision 4 — Filtering location
 
-**Chosen:** Filter on the client. `GET /tasks` continues to return all tasks; the board applies the overdue toggle and the tag filter during render.
+**Chosen:** Filter in both places. `GET /tasks` accepts an optional `overdue=true` query parameter and returns only overdue tasks; the frontend also applies the overdue toggle and tag filter during render.
 
 Alternatives considered:
-- **Query parameters on `GET /tasks` (`?overdue=true&tag=bug`).** Genuinely tempting and closer to real practice. Rejected for this project: it adds query-parameter validation, a new set of backend tests, and a round-trip on every filter toggle, while the dataset is small and held in memory. Client-side filtering keeps the diff small and keeps both filters in one place.
+- **Client-side only.** This was the original decision, on the grounds that the dataset is small and held in memory, so a round-trip per filter toggle added cost without benefit. Rejected on review: the brief specifies an optional query filter for overdue as backend work, and a client-only filter cannot be proven with pytest. The backend capability is the testable one.
+- **Backend only, with no client-side filtering.** Rejected: the board already re-renders from a single `fetchTasks()` call, and routing every filter toggle through the network would add latency to a UI interaction that does not need it.
 
-Consequence recorded honestly: if the dataset grew, this decision would need revisiting. It is correct for an in-memory tracker, not in general.
+The backend filter is the source of truth and is covered by `test_list_tasks_overdue_filter_returns_only_overdue_tasks`. The frontend checkbox remains client-side for responsiveness.
+
+**Correction recorded:** the first version of this ADR rejected query parameters outright. That reasoning was sound in isolation but traded away a named requirement in the brief. Documenting a rejection clearly is not the same as being free to make it.
 
 ---
 
